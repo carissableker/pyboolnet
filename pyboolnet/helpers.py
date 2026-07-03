@@ -220,12 +220,20 @@ def copy_json_data(data: dict) -> dict:
 def get_env_with_libreadline6_on_ld_library_path() -> dict:
     env = os.environ.copy()
 
+    # LD_LIBRARY_PATH is a Linux/Unix-specific dynamic-linker variable; it
+    # has no effect on Windows and isn't honored by macOS's dyld (which
+    # uses DYLD_LIBRARY_PATH instead), so only Linux needs this at all.
+    if platform.system() != "Linux":
+        return env
+
+    nusmv_dir = os.path.join(ROOT_DIR, "binaries", _get_platform_subdir(), "NuSMV-a")
+
     if "LD_LIBRARY_PATH" not in env:
         env["LD_LIBRARY_PATH"] = ""
     else:
         env["LD_LIBRARY_PATH"] += os.pathsep
 
-    env["LD_LIBRARY_PATH"] += os.path.join(ROOT_DIR, "binaries", "NuSMV-a")
+    env["LD_LIBRARY_PATH"] += nusmv_dir
 
     return env
 
