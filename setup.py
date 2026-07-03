@@ -3,7 +3,6 @@
 import os
 import platform
 import sys
-from distutils.dir_util import copy_tree
 
 from setuptools import setup, find_packages
 
