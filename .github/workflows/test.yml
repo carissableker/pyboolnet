@@ -40,6 +40,25 @@ jobs:
       # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
       - uses: actions/checkout@v2
 
+      # Diagnostic only, no side effects: BNetToPrime and gringo/clasp are
+      # all Intel-only binaries, yet BNetToPrime and the gringo/clasp exec
+      # itself both succeed on this runner (only the piped gringo|clasp
+      # interaction fails, with "bad input stream" - not an exec-level
+      # crash). This checks whether Rosetta 2 is actually present, since
+      # neither the runner-images docs nor existing logs confirm it either
+      # way.
+      - name: Check Rosetta 2 status (macOS)
+        if: runner.os == 'macOS'
+        run: |
+          echo "--- native arch ---"
+          arch
+          echo "--- oahd translation daemon (modern check) ---"
+          pgrep -fl oahd || echo "oahd not running"
+          echo "--- rosetta runtime present ---"
+          ls -la /Library/Apple/usr/libexec/oah/ 2>&1 || echo "rosetta runtime directory not found"
+          echo "--- direct test: actually run something under x86_64 ---"
+          arch -x86_64 /usr/bin/true && echo "x86_64 execution via Rosetta: OK" || echo "x86_64 execution via Rosetta: FAILED"
+
       - name: set up Python 3.12
         uses: actions/setup-python@v2
         with:
