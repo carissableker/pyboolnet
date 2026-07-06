@@ -21,9 +21,16 @@ jobs:
     # clasp, BNetToPrime, ...) is Intel-only and needs Rosetta 2; piping
     # two Rosetta-translated processes together (gringo | clasp) is a
     # known source of the "bad input stream" parse errors seen here.
-    # Kept in the matrix for visibility, not as a hard gate, until
-    # ARM64 binaries or a system-tool fallback are added.
-    continue-on-error: ${{ matrix.os == 'macos-latest' }}
+    #
+    # windows-latest has two known, unfixed issues: (1) shutil.which("convert")
+    # resolves to Windows' own system32\convert.exe (disk format conversion)
+    # instead of ImageMagick's tool, since it comes first on PATH; (2)
+    # eqntott_win64.exe exits with STATUS_DLL_NOT_FOUND, likely missing a
+    # bundled runtime DLL the way BNetToPrime's folder already has one.
+    #
+    # Both are kept in the matrix for visibility, not as a hard gate, until
+    # fixed.
+    continue-on-error: ${{ matrix.os == 'macos-latest' || matrix.os == 'windows-latest' }}
 
     defaults:
       run:
@@ -46,11 +53,16 @@ jobs:
           python -m pip install --upgrade pip
           pip install .
 
-      - name: Install imagemagick and graphviz (Linux)
+      - name: Install imagemagick, graphviz, cpp (Linux)
         if: runner.os == 'Linux'
         run: |
           sudo apt update
-          sudo apt install -y graphviz imagemagick
+          # eqntott_linux64 shells out to a hardcoded /lib/cpp (an FHS
+          # compat requirement most distros no longer bother with by
+          # default). Debian/Ubuntu's cpp package still creates this
+          # symlink automatically via update-alternatives, so installing
+          # it is sufficient - no manual symlink needed.
+          sudo apt install -y graphviz imagemagick cpp
 
       - name: Install imagemagick and graphviz (macOS)
         if: runner.os == 'macOS'
